@@ -14,7 +14,7 @@
 
   <script>
     // ⚠️ デプロイしたGASのWebアプリURLに書き換えてください。
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzjYbuAcKajBWiXYxTQ6CYnL53HxzEVYafK63tgKX65t3u5jLFR77751OVXqz74rL7akA/exec";
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbywgza4WCrQaQZ3xROLlZN9-NwDFxQygi3T-G27nwB2cGkNMbXu_uBHlG2UxApKpJT6/exec";
   </script>
 
   <div id="app" class="flex-grow flex flex-col">
@@ -25,6 +25,7 @@
         <div class="flex items-center space-x-3 text-sm mt-2 sm:mt-0">
           <span id="user-display" class="font-medium"></span>
           <button onclick="switchView('view-calendar')" class="hover:underline px-2 py-1">予定・音声メモ</button>
+          <button onclick="switchView('view-todo')" class="hover:underline px-2 py-1">ToDo</button>
           <button onclick="switchView('view-board')" class="hover:underline px-2 py-1">イベント企画</button>
           <button onclick="openHelpModal()" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1 rounded">使い方</button>
           <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded">ログアウト</button>
@@ -122,20 +123,35 @@
 
 
       <div id="view-calendar" class="hidden space-y-6">
-        <div class="flex justify-between items-center border-b pb-3 flex-wrap">
+        <div class="flex justify-between items-center border-b pb-3 flex-wrap gap-2">
           <h2 class="text-xl font-bold text-gray-700">直近のGoogleカレンダー予定一覧</h2>
-          <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+          <div class="flex items-center space-x-2 mt-2 sm:mt-0 flex-wrap gap-2">
             <select id="calendar-days" onchange="loadCalendarData()" class="border rounded px-2 py-1 text-sm bg-white">
               <option value="7">今後7日間</option>
               <option value="14" selected>今後14日間</option>
               <option value="30">今後30日間</option>
             </select>
             <button onclick="loadCalendarData()" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 text-sm rounded">再読込</button>
+            <button onclick="openEventModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1 text-sm rounded shadow">+ 予定を追加</button>
           </div>
         </div>
 
         <div id="calendar-list" class="space-y-3">
           <p class="text-gray-500 text-center py-8">カレンダーの予定を読み込んでいます...</p>
+        </div>
+      </div>
+
+
+      <div id="view-todo" class="hidden space-y-6">
+        <div class="flex justify-between items-center border-b pb-3">
+          <h2 class="text-xl font-bold text-gray-700">ToDoリスト</h2>
+          <button onclick="openTodoModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 text-sm rounded shadow">
+            + 新しいToDoを追加
+          </button>
+        </div>
+
+        <div id="todo-list" class="space-y-3">
+          <p class="text-gray-500 text-center py-8">読み込んでいます...</p>
         </div>
       </div>
 
@@ -175,13 +191,82 @@
         </div>
         <div class="flex items-center justify-between bg-gray-50 p-2 rounded-md border">
           <span id="speech-status" class="text-xs text-gray-500">マイクボタンを押して喋ってください</span>
-          <button type="button" id="speech-btn" onclick="toggleSpeechRecognition()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 py-1 rounded text-xs flex items-center space-x-1">
+          <button type="button" id="speech-btn" onclick="toggleSpeechRecognition('memo-text','speech-btn','speech-status')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 py-1 rounded text-xs flex items-center space-x-1">
             <span>🎤 音声入力開始</span>
           </button>
         </div>
         <div class="flex justify-end space-x-2 pt-2">
           <button onclick="closeMemoModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm">キャンセル</button>
           <button onclick="saveMemoData()" class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm font-bold">保存する</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-event" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+        <div class="flex justify-between items-start">
+          <h3 class="text-lg font-bold text-gray-800" id="event-modal-title">予定を追加</h3>
+          <button onclick="closeEventModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+        </div>
+        <input type="hidden" id="event-id">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">タイトル</label>
+          <input type="text" id="event-title" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">開始日時</label>
+            <input type="datetime-local" id="event-start" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">終了日時</label>
+            <input type="datetime-local" id="event-end" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">詳細 (任意)</label>
+          <textarea id="event-description" rows="3" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="音声入力を開始するか、直接入力してください。"></textarea>
+        </div>
+        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-md border">
+          <span id="event-speech-status" class="text-xs text-gray-500">マイクボタンを押して喋ってください</span>
+          <button type="button" id="event-speech-btn" onclick="toggleSpeechRecognition('event-description','event-speech-btn','event-speech-status')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 py-1 rounded text-xs flex items-center space-x-1">
+            <span>🎤 音声入力開始</span>
+          </button>
+        </div>
+        <div class="flex justify-between items-center pt-2">
+          <button type="button" id="event-delete-btn" onclick="deleteEventData()" class="hidden px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm font-bold">削除する</button>
+          <div class="flex space-x-2 ml-auto">
+            <button onclick="closeEventModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm">キャンセル</button>
+            <button onclick="saveEventData()" class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm font-bold">保存する</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-todo" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 space-y-4">
+        <div class="flex justify-between items-start">
+          <h3 class="text-lg font-bold text-gray-800" id="todo-modal-title">ToDoを追加</h3>
+          <button onclick="closeTodoModal()" class="text-gray-400 hover:text-gray-600 font-bold text-xl">&times;</button>
+        </div>
+        <input type="hidden" id="todo-id">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">内容</label>
+          <textarea id="todo-content" rows="3" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="音声入力を開始するか、直接入力してください。"></textarea>
+        </div>
+        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-md border">
+          <span id="todo-speech-status" class="text-xs text-gray-500">マイクボタンを押して喋ってください</span>
+          <button type="button" id="todo-speech-btn" onclick="toggleSpeechRecognition('todo-content','todo-speech-btn','todo-speech-status')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 py-1 rounded text-xs flex items-center space-x-1">
+            <span>🎤 音声入力開始</span>
+          </button>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">期限 (任意)</label>
+          <input type="date" id="todo-due" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div class="flex justify-end space-x-2 pt-2">
+          <button onclick="closeTodoModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm">キャンセル</button>
+          <button onclick="saveTodoData()" class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 text-sm font-bold">保存する</button>
         </div>
       </div>
     </div>
@@ -235,6 +320,8 @@
     let session = { email: null, nickname: null, token: null, isAdmin: false, memos: {} };
     let recognition = null;
     let isListening = false;
+    let eventCache = [];
+    let todoCache = [];
 
     // --- パスワードの表示/非表示トグル機能 ---
     function togglePasswordVisibility(inputId, buttonEl) {
@@ -250,7 +337,7 @@
 
     // --- 以降、既存のアプリケーションロジック ---
     function switchView(viewId) {
-      const views = ['view-auth', 'view-change-password', 'view-calendar', 'view-board'];
+      const views = ['view-auth', 'view-change-password', 'view-calendar', 'view-todo', 'view-board'];
       views.forEach(v => {
         document.getElementById(v).classList.remove('block', 'hidden');
         document.getElementById(v).classList.add('hidden');
@@ -266,6 +353,7 @@
       }
 
       if (viewId === 'view-calendar') loadCalendarData();
+      if (viewId === 'view-todo') loadTodoData();
       if (viewId === 'view-board') loadBoardData();
     }
 
@@ -379,6 +467,7 @@
       if (memoRes.success) session.memos = memoRes.memos;
       const calRes = await callBackend("getCalendar", { days: days });
       if (!calRes.success) { listDiv.innerHTML = `<p class="text-red-500 text-center py-8">${calRes.message}</p>`; return; }
+      eventCache = calRes.events;
       if (calRes.events.length === 0) { listDiv.innerHTML = '<p class="text-gray-500 text-center py-8">予定はありません。</p>'; return; }
       
       listDiv.innerHTML = "";
@@ -391,14 +480,20 @@
         card.className = "bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:border-emerald-300 transition cursor-pointer flex flex-col md:flex-row justify-between items-start md:items-center space-y-3 md:space-y-0";
         card.onclick = () => openMemoModal(ev.id, ev.title, dateStr);
         card.innerHTML = `
-          <div class="space-y-1">
+          <div class="space-y-1 flex-grow">
             <div class="flex items-center space-x-2">
               <span class="bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded">${dateStr} ${timeStr}</span>
-              <h4 class="font-bold text-gray-800">${ev.title}</h4>
+              <h4 class="font-bold text-gray-800">${escapeHtml(ev.title)}</h4>
             </div>
-            ${existingMemo ? `<div class="mt-2 text-sm bg-amber-50 text-amber-900 px-3 py-1.5 rounded border border-amber-200">${existingMemo}</div>` : '<span class="text-xs text-gray-400 block pt-1">💡 タップして実績メモを残す</span>'}
+            ${existingMemo ? `<div class="mt-2 text-sm bg-amber-50 text-amber-900 px-3 py-1.5 rounded border border-amber-200">${escapeHtml(existingMemo)}</div>` : '<span class="text-xs text-gray-400 block pt-1">💡 タップして実績メモを残す</span>'}
+          </div>
+          <div class="flex space-x-3 text-xs shrink-0 pl-2">
+            <button data-action="edit" class="text-blue-500 hover:underline">編集</button>
+            <button data-action="delete" class="text-red-500 hover:underline">削除</button>
           </div>
         `;
+        card.querySelector('[data-action="edit"]').onclick = (evt) => { evt.stopPropagation(); openEventModal(ev.id); };
+        card.querySelector('[data-action="delete"]').onclick = (evt) => { evt.stopPropagation(); deleteEventDirect(ev.id, ev.title); };
         listDiv.appendChild(card);
       });
     }
@@ -411,7 +506,7 @@
       document.getElementById('modal-memo').classList.remove('hidden');
     }
 
-    function closeMemoModal() { if(isListening) toggleSpeechRecognition(); document.getElementById('modal-memo').classList.add('hidden'); }
+    function closeMemoModal() { if(isListening) toggleSpeechRecognition('memo-text','speech-btn','speech-status'); document.getElementById('modal-memo').classList.add('hidden'); }
     
     async function saveMemoData() {
       const eventId = document.getElementById('memo-event-id').value;
@@ -421,21 +516,24 @@
       if (res.success) { closeMemoModal(); loadCalendarData(); } else { alert("保存失敗: " + res.message); }
     }
 
-    function toggleSpeechRecognition() {
-      const speechBtn = document.getElementById('speech-btn');
-      const statusSpan = document.getElementById('speech-status');
-      const textArea = document.getElementById('memo-text');
+    // --- 汎用の音声入力機能 (実績メモ・予定・ToDoで共通利用) ---
+    function toggleSpeechRecognition(targetId, btnId, statusId) {
+      const speechBtn = document.getElementById(btnId);
+      const statusSpan = document.getElementById(statusId);
+      const textArea = document.getElementById(targetId);
       if (isListening) {
         if (recognition) recognition.stop();
         isListening = false;
         speechBtn.innerText = "🎤 音声入力開始";
-        statusSpan.innerText = "音声入力を停止しました。";
+        if (statusSpan) statusSpan.innerText = "音声入力を停止しました。";
       } else {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) { alert("音声認識非対応ブラウザです。"); return; }
         recognition = new SpeechRecognition();
         recognition.lang = 'ja-JP'; recognition.continuous = true;
-        recognition.onstart = () => { isListening = true; speechBtn.innerText = "🛑 認識を終了する"; statusSpan.innerText = "録音中..."; };
+        recognition.onstart = () => { isListening = true; speechBtn.innerText = "🛑 認識を終了する"; if (statusSpan) statusSpan.innerText = "録音中..."; };
+        recognition.onerror = () => { isListening = false; speechBtn.innerText = "🎤 音声入力開始"; if (statusSpan) statusSpan.innerText = "音声認識でエラーが発生しました。"; };
+        recognition.onend = () => { if (isListening) { isListening = false; speechBtn.innerText = "🎤 音声入力開始"; } };
         recognition.onresult = (event) => {
           let text = "";
           for (let i = event.resultIndex; i < event.results.length; i++) { if (event.results[i].isFinal) text += event.results[i][0].transcript; }
@@ -443,6 +541,150 @@
         };
         recognition.start();
       }
+    }
+
+    // --- Googleカレンダー予定の追加・修正・削除 ---
+    function toDatetimeLocal(isoStr) {
+      const d = new Date(isoStr);
+      const pad = n => n.toString().padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function openEventModal(id) {
+      const isEdit = !!id;
+      document.getElementById('event-modal-title').innerText = isEdit ? '予定を編集' : '予定を追加';
+      document.getElementById('event-delete-btn').classList.toggle('hidden', !isEdit);
+      if (isEdit) {
+        const ev = eventCache.find(e => e.id === id);
+        if (!ev) return;
+        document.getElementById('event-id').value = ev.id;
+        document.getElementById('event-title').value = ev.title;
+        document.getElementById('event-start').value = toDatetimeLocal(ev.start);
+        document.getElementById('event-end').value = toDatetimeLocal(ev.end);
+        document.getElementById('event-description').value = ev.description || "";
+      } else {
+        document.getElementById('event-id').value = "";
+        document.getElementById('event-title').value = "";
+        document.getElementById('event-start').value = "";
+        document.getElementById('event-end').value = "";
+        document.getElementById('event-description').value = "";
+      }
+      document.getElementById('modal-event').classList.remove('hidden');
+    }
+
+    function closeEventModal() { if(isListening) toggleSpeechRecognition('event-description','event-speech-btn','event-speech-status'); document.getElementById('modal-event').classList.add('hidden'); }
+
+    async function saveEventData() {
+      const id = document.getElementById('event-id').value;
+      const title = document.getElementById('event-title').value;
+      const start = document.getElementById('event-start').value;
+      const end = document.getElementById('event-end').value;
+      const description = document.getElementById('event-description').value;
+      if (!title || !start || !end) { alert("タイトル・開始日時・終了日時は必須です。"); return; }
+      const action = id ? "updateCalendarEvent" : "addCalendarEvent";
+      const res = await callBackend(action, { eventId: id, title, start, end, description });
+      if (res.success) { closeEventModal(); loadCalendarData(); } else { alert("保存失敗: " + res.message); }
+    }
+
+    async function deleteEventData() {
+      const id = document.getElementById('event-id').value;
+      const title = document.getElementById('event-title').value;
+      if (!id) return;
+      if (!confirm(`「${title}」を削除しますか？`)) return;
+      const res = await callBackend("deleteCalendarEvent", { eventId: id });
+      if (res.success) { closeEventModal(); loadCalendarData(); } else { alert("削除失敗: " + res.message); }
+    }
+
+    async function deleteEventDirect(id, title) {
+      if (!confirm(`「${title}」を削除しますか？`)) return;
+      const res = await callBackend("deleteCalendarEvent", { eventId: id });
+      if (res.success) { loadCalendarData(); } else { alert("削除失敗: " + res.message); }
+    }
+
+    // --- ToDo機能 ---
+    async function loadTodoData() {
+      const listDiv = document.getElementById('todo-list');
+      listDiv.innerHTML = '<p class="text-gray-500 text-center py-8">読み込み中...</p>';
+      const res = await callBackend("getTodos");
+      if (!res.success) { listDiv.innerHTML = `<p class="text-red-500 text-center py-8">${res.message}</p>`; return; }
+      todoCache = res.todos;
+      if (todoCache.length === 0) { listDiv.innerHTML = '<p class="text-gray-500 text-center py-8">ToDoはまだありません。</p>'; return; }
+
+      listDiv.innerHTML = "";
+      todoCache.forEach(t => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-start space-x-3";
+
+        const checkbox = document.createElement('input');
+        checkbox.type = "checkbox";
+        checkbox.checked = t.done;
+        checkbox.className = "mt-1 h-5 w-5 text-emerald-600 rounded shrink-0";
+        checkbox.onchange = () => toggleTodoDone(t.id, checkbox.checked);
+
+        const content = document.createElement('div');
+        content.className = `flex-grow ${t.done ? 'opacity-50 line-through' : ''}`;
+        content.innerHTML = `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(t.content)}</p>${t.due ? `<span class="text-xs text-gray-400">期限: ${escapeHtml(t.due)}</span>` : ''}`;
+
+        const actions = document.createElement('div');
+        actions.className = "flex space-x-3 text-xs shrink-0 pl-2";
+        const editBtn = document.createElement('button');
+        editBtn.innerText = "編集";
+        editBtn.className = "text-blue-500 hover:underline";
+        editBtn.onclick = () => openTodoModal(t.id);
+        const delBtn = document.createElement('button');
+        delBtn.innerText = "削除";
+        delBtn.className = "text-red-500 hover:underline";
+        delBtn.onclick = () => deleteTodoData(t.id);
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        card.appendChild(checkbox);
+        card.appendChild(content);
+        card.appendChild(actions);
+        listDiv.appendChild(card);
+      });
+    }
+
+    function openTodoModal(id) {
+      const isEdit = !!id;
+      document.getElementById('todo-modal-title').innerText = isEdit ? 'ToDoを編集' : 'ToDoを追加';
+      if (isEdit) {
+        const t = todoCache.find(x => x.id === id);
+        if (!t) return;
+        document.getElementById('todo-id').value = t.id;
+        document.getElementById('todo-content').value = t.content;
+        document.getElementById('todo-due').value = t.due || "";
+      } else {
+        document.getElementById('todo-id').value = "";
+        document.getElementById('todo-content').value = "";
+        document.getElementById('todo-due').value = "";
+      }
+      document.getElementById('modal-todo').classList.remove('hidden');
+    }
+
+    function closeTodoModal() { if(isListening) toggleSpeechRecognition('todo-content','todo-speech-btn','todo-speech-status'); document.getElementById('modal-todo').classList.add('hidden'); }
+
+    async function saveTodoData() {
+      const id = document.getElementById('todo-id').value;
+      const content = document.getElementById('todo-content').value;
+      const due = document.getElementById('todo-due').value;
+      if (!content) { alert("内容を入力してください。"); return; }
+      const action = id ? "updateTodo" : "addTodo";
+      const payload = id ? { id, content, due } : { content, due };
+      const res = await callBackend(action, payload);
+      if (res.success) { closeTodoModal(); loadTodoData(); } else { alert("保存失敗: " + res.message); }
+    }
+
+    async function toggleTodoDone(id, done) {
+      const res = await callBackend("updateTodo", { id, done });
+      if (!res.success) alert("更新失敗: " + res.message);
+      loadTodoData();
+    }
+
+    async function deleteTodoData(id) {
+      if (!confirm("このToDoを削除しますか？")) return;
+      const res = await callBackend("deleteTodo", { id });
+      if (res.success) { loadTodoData(); } else { alert("削除失敗: " + res.message); }
     }
 
     async function loadBoardData() {
@@ -462,12 +704,36 @@
           <div class="text-xs pt-2 border-t flex justify-between">
             ${ev.snsLink ? `<a href="${escapeHtml(ev.snsLink)}" target="_blank" class="text-blue-600 font-bold">🔗 連絡先</a>` : ''}
             <div>
-              ${canEdit ? `<button onclick="deleteBoardData('${ev.id}')" class="text-red-500">削除</button>` : ''}
+              ${canEdit ? `<button data-action="delete-board" class="text-red-500">削除</button>` : ''}
             </div>
           </div>
         `;
+        if (canEdit) {
+          card.querySelector('[data-action="delete-board"]').onclick = () => deleteBoardData(ev.id);
+        }
         bList.appendChild(card);
       });
+    }
+
+    async function deleteBoardData(eventId) {
+      if (!confirm("この投稿を削除しますか？")) return;
+      const res = await callBackend("deleteBoard", { eventId });
+      if (res.success) { loadBoardData(); } else { alert("削除失敗: " + res.message); }
+    }
+
+    async function submitBoardData() {
+      const title = document.getElementById('board-title').value;
+      const description = document.getElementById('board-description').value;
+      const snsLink = document.getElementById('board-sns').value;
+      if (!title || !description) { alert("イベント名と企画内容は必須です。"); return; }
+      const res = await callBackend("submitBoard", { title, description, snsLink });
+      if (res.success) {
+        closeBoardModal();
+        document.getElementById('board-title').value = "";
+        document.getElementById('board-description').value = "";
+        document.getElementById('board-sns').value = "";
+        loadBoardData();
+      } else { alert("投稿失敗: " + res.message); }
     }
 
     function openBoardModal() { document.getElementById('modal-board').classList.remove('hidden'); }
