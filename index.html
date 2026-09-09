@@ -547,19 +547,21 @@
         card.onclick = () => openMemoModal(ev.id, ev.title, dateStr);
         card.innerHTML = `
           <div class="space-y-1 flex-grow">
-            <div class="flex items-center space-x-2">
+            <div class="flex items-center space-x-2 flex-wrap">
               <span class="bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded">${dateStr} ${timeStr}</span>
               <h4 class="font-bold text-gray-800">${escapeHtml(ev.title)}</h4>
+              ${ev.ownerNickname ? `<span class="text-xs text-gray-400">by ${escapeHtml(ev.ownerNickname)}</span>` : ''}
             </div>
             ${existingMemo ? `<div class="mt-2 text-sm bg-amber-50 text-amber-900 px-3 py-1.5 rounded border border-amber-200">${escapeHtml(existingMemo)}</div>` : '<span class="text-xs text-gray-400 block pt-1">💡 タップして実績メモを残す</span>'}
           </div>
           <div class="flex space-x-3 text-xs shrink-0 pl-2">
-            <button data-action="edit" class="text-blue-500 hover:underline">編集</button>
-            <button data-action="delete" class="text-red-500 hover:underline">削除</button>
+            ${ev.canEdit ? `<button data-action="edit" class="text-blue-500 hover:underline">編集</button><button data-action="delete" class="text-red-500 hover:underline">削除</button>` : ''}
           </div>
         `;
-        card.querySelector('[data-action="edit"]').onclick = (evt) => { evt.stopPropagation(); openEventModal(ev.id); };
-        card.querySelector('[data-action="delete"]').onclick = (evt) => { evt.stopPropagation(); deleteEventDirect(ev.id, ev.title); };
+        if (ev.canEdit) {
+          card.querySelector('[data-action="edit"]').onclick = (evt) => { evt.stopPropagation(); openEventModal(ev.id); };
+          card.querySelector('[data-action="delete"]').onclick = (evt) => { evt.stopPropagation(); deleteEventDirect(ev.id, ev.title); };
+        }
         listDiv.appendChild(card);
       });
     }
