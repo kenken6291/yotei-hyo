@@ -28,6 +28,7 @@
           <button onclick="switchView('view-todo')" class="hover:underline px-2 py-1">ToDo</button>
           <button onclick="switchView('view-board')" class="hover:underline px-2 py-1">イベント企画</button>
           <button onclick="switchView('view-account')" class="hover:underline px-2 py-1">アカウント設定</button>
+          <button id="nav-admin-btn" onclick="switchView('view-admin')" class="hidden hover:underline px-2 py-1">管理者</button>
           <button onclick="openHelpModal()" class="bg-emerald-700 hover:bg-emerald-800 px-3 py-1 rounded">使い方</button>
           <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded">ログアウト</button>
         </div>
@@ -51,7 +52,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">パスワード</label>
             <div class="relative">
               <input type="password" id="login-password" required class="w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
-              <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
+              <button type="button" onclick="togglePasswordVisibility('login-password', this)" aria-label="パスワードを表示" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
                 👁️
               </button>
             </div>
@@ -113,7 +114,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">新しいパスワード</label>
             <div class="relative">
               <input type="password" id="new-password" required minlength="6" class="w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
-              <button type="button" onclick="togglePasswordVisibility('new-password', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
+              <button type="button" onclick="togglePasswordVisibility('new-password', this)" aria-label="パスワードを表示" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
                 👁️
               </button>
             </div>
@@ -144,11 +145,19 @@
 
 
       <div id="view-todo" class="hidden space-y-6">
-        <div class="flex justify-between items-center border-b pb-3">
+        <div class="flex justify-between items-center border-b pb-3 flex-wrap gap-2">
           <h2 class="text-xl font-bold text-gray-700">ToDoリスト</h2>
-          <button onclick="openTodoModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 text-sm rounded shadow">
-            + 新しいToDoを追加
-          </button>
+          <div class="flex items-center space-x-2">
+            <select id="todo-sort" onchange="renderTodoList()" class="border rounded px-2 py-1 text-sm bg-white">
+              <option value="due">期限順</option>
+              <option value="created-desc">作成日順（新しい順）</option>
+              <option value="created-asc">作成日順（古い順）</option>
+              <option value="content">内容順（あいうえお順）</option>
+            </select>
+            <button onclick="openTodoModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 text-sm rounded shadow">
+              + 新しいToDoを追加
+            </button>
+          </div>
         </div>
 
         <div id="todo-list" class="space-y-3">
@@ -168,6 +177,7 @@
         <div id="board-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <p class="text-gray-500 text-center py-8 col-span-2">掲示板データを読み込んでいます...</p>
         </div>
+        <div id="board-pagination" class="flex justify-center items-center space-x-4 pt-2"></div>
       </div>
 
 
@@ -191,7 +201,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">新しいパスワード</label>
             <div class="relative">
               <input type="password" id="account-new-password" minlength="6" class="w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
-              <button type="button" onclick="togglePasswordVisibility('account-new-password', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
+              <button type="button" onclick="togglePasswordVisibility('account-new-password', this)" aria-label="パスワードを表示" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
                 👁️
               </button>
             </div>
@@ -203,6 +213,29 @@
           <h2 class="text-lg font-bold text-red-600 border-b pb-2">退会（アカウント削除）</h2>
           <p class="text-xs text-gray-500">退会すると、会員情報・実績メモ・ToDo・投稿した企画がすべて削除され、元に戻せません。</p>
           <button onclick="openDeleteAccountModal()" class="w-full bg-red-500 text-white font-bold py-2 rounded-md hover:bg-red-600 transition">退会する</button>
+        </div>
+      </div>
+
+      <div id="view-admin" class="hidden space-y-6">
+        <div class="flex justify-between items-center border-b pb-3">
+          <h2 class="text-xl font-bold text-gray-700">管理者メニュー</h2>
+          <button onclick="loadAdminData()" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 text-sm rounded">再読込</button>
+        </div>
+        <div class="bg-white rounded-lg shadow-md overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-gray-100 text-gray-600">
+              <tr>
+                <th class="px-4 py-2">ニックネーム</th>
+                <th class="px-4 py-2">メールアドレス</th>
+                <th class="px-4 py-2">登録日</th>
+                <th class="px-4 py-2">管理者</th>
+                <th class="px-4 py-2">操作</th>
+              </tr>
+            </thead>
+            <tbody id="admin-user-list">
+              <tr><td colspan="5" class="text-center text-gray-500 py-8">読み込んでいます...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -227,7 +260,7 @@
           <textarea id="memo-text" rows="4" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="音声入力を開始するか、直接入力してください。"></textarea>
         </div>
         <div class="flex items-center justify-between bg-gray-50 p-2 rounded-md border">
-          <span id="speech-status" class="text-xs text-gray-500">マイクボタンを押して喋ってください</span>
+          <span id="speech-status" class="text-xs text-gray-500">マイクボタンを押して喋ってください（Chrome推奨。Safari等では使えない場合があります）</span>
           <button type="button" id="speech-btn" onclick="toggleSpeechRecognition('memo-text','speech-btn','speech-status')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 py-1 rounded text-xs flex items-center space-x-1">
             <span>🎤 音声入力開始</span>
           </button>
@@ -265,7 +298,7 @@
           <textarea id="event-description" rows="3" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="音声入力を開始するか、直接入力してください。"></textarea>
         </div>
         <div class="flex items-center justify-between bg-gray-50 p-2 rounded-md border">
-          <span id="event-speech-status" class="text-xs text-gray-500">マイクボタンを押して喋ってください</span>
+          <span id="event-speech-status" class="text-xs text-gray-500">マイクボタンを押して喋ってください（Chrome推奨。Safari等では使えない場合があります）</span>
           <button type="button" id="event-speech-btn" onclick="toggleSpeechRecognition('event-description','event-speech-btn','event-speech-status')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 py-1 rounded text-xs flex items-center space-x-1">
             <span>🎤 音声入力開始</span>
           </button>
@@ -292,14 +325,14 @@
           <textarea id="todo-content" rows="3" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="音声入力を開始するか、直接入力してください。"></textarea>
         </div>
         <div class="flex items-center justify-between bg-gray-50 p-2 rounded-md border">
-          <span id="todo-speech-status" class="text-xs text-gray-500">マイクボタンを押して喋ってください</span>
+          <span id="todo-speech-status" class="text-xs text-gray-500">マイクボタンを押して喋ってください（Chrome推奨。Safari等では使えない場合があります）</span>
           <button type="button" id="todo-speech-btn" onclick="toggleSpeechRecognition('todo-content','todo-speech-btn','todo-speech-status')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 py-1 rounded text-xs flex items-center space-x-1">
             <span>🎤 音声入力開始</span>
           </button>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">期限 (任意)</label>
-          <input type="date" id="todo-due" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <input type="datetime-local" id="todo-due" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
         </div>
         <div class="flex justify-end space-x-2 pt-2">
           <button onclick="closeTodoModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm">キャンセル</button>
@@ -347,7 +380,7 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">パスワード</label>
           <div class="relative">
             <input type="password" id="delete-account-password" required class="w-full px-3 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            <button type="button" onclick="togglePasswordVisibility('delete-account-password', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
+            <button type="button" onclick="togglePasswordVisibility('delete-account-password', this)" aria-label="パスワードを表示" class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-gray-500 hover:text-gray-700">
               👁️
             </button>
           </div>
@@ -382,6 +415,52 @@
     let isListening = false;
     let eventCache = [];
     let todoCache = [];
+    let boardCache = [];
+
+    // --- セッションの保存・復元（ページ再読み込みでログイン状態を維持する） ---
+    const SESSION_STORAGE_KEY = 'yoteihyo_session';
+
+    function persistSession() {
+      try {
+        sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+          email: session.email,
+          nickname: session.nickname,
+          sns: session.sns,
+          token: session.token,
+          isAdmin: session.isAdmin
+        }));
+      } catch (e) { /* プライベートブラウズ等でストレージが使えない場合は無視 */ }
+    }
+
+    function clearPersistedSession() {
+      try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch (e) { /* 無視 */ }
+    }
+
+    async function restoreSession() {
+      let saved;
+      try {
+        const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        if (!raw) return;
+        saved = JSON.parse(raw);
+      } catch (e) { return; }
+      if (!saved || !saved.email || !saved.token) return;
+
+      session.email = saved.email;
+      session.token = saved.token;
+      const res = await callBackend("checkSession");
+      if (res.success) {
+        session.nickname = res.nickname;
+        session.sns = res.sns;
+        session.isAdmin = res.isAdmin;
+        switchView('view-calendar');
+      } else {
+        session = { email: null, nickname: null, sns: null, token: null, isAdmin: false, memos: {} };
+        clearPersistedSession();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', restoreSession);
+
 
     // --- パスワードの表示/非表示トグル機能 ---
     function togglePasswordVisibility(inputId, buttonEl) {
@@ -389,15 +468,17 @@
       if (input.type === "password") {
         input.type = "text";
         buttonEl.innerText = "🙈"; // 非表示にするためのアイコンに変更
+        buttonEl.setAttribute('aria-label', 'パスワードを非表示');
       } else {
         input.type = "password";
         buttonEl.innerText = "👁️"; // 表示するためのアイコンに戻す
+        buttonEl.setAttribute('aria-label', 'パスワードを表示');
       }
     }
 
     // --- 以降、既存のアプリケーションロジック ---
     function switchView(viewId) {
-      const views = ['view-auth', 'view-change-password', 'view-calendar', 'view-todo', 'view-board', 'view-account'];
+      const views = ['view-auth', 'view-change-password', 'view-calendar', 'view-todo', 'view-board', 'view-account', 'view-admin'];
       views.forEach(v => {
         document.getElementById(v).classList.remove('block', 'hidden');
         document.getElementById(v).classList.add('hidden');
@@ -410,15 +491,20 @@
       } else {
         document.getElementById('nav-bar').classList.remove('hidden');
         document.getElementById('user-display').innerText = `👤 ${session.nickname} さん`;
+        document.getElementById('nav-admin-btn').classList.toggle('hidden', !session.isAdmin);
       }
 
       if (viewId === 'view-calendar') loadCalendarData();
       if (viewId === 'view-todo') loadTodoData();
-      if (viewId === 'view-board') loadBoardData();
+      if (viewId === 'view-board') loadBoardData(1);
       if (viewId === 'view-account') {
         document.getElementById('account-nickname').value = session.nickname || "";
         document.getElementById('account-sns').value = session.sns || "";
         document.getElementById('account-new-password').value = "";
+      }
+      if (viewId === 'view-admin') {
+        if (!session.isAdmin) { switchView('view-calendar'); return; }
+        loadAdminData();
       }
     }
 
@@ -499,6 +585,7 @@
         session.sns = res.sns;
         session.token = res.token;
         session.isAdmin = res.isAdmin;
+        persistSession();
         if (res.isFirstLogin) { switchView('view-change-password'); } else { switchView('view-calendar'); }
       } else { alert("ログイン失敗: " + res.message); }
     }
@@ -507,7 +594,7 @@
       e.preventDefault();
       const newPassword = document.getElementById('new-password').value;
       const res = await callBackend("changePassword", { newPassword });
-      if (res.success) { alert("パスワードが変更されました。"); switchView('view-calendar'); } else { alert("変更失敗: " + res.message); }
+      if (res.success) { persistSession(); alert("パスワードが変更されました。"); switchView('view-calendar'); } else { alert("変更失敗: " + res.message); }
     }
 
     async function handleForgotPassword(e) {
@@ -518,8 +605,10 @@
       if (res.success) toggleAuthTab('login');
     }
 
-    function logout() {
+    async function logout() {
+      await callBackend("logout");
       session = { email: null, nickname: null, sns: null, token: null, isAdmin: false, memos: {} };
+      clearPersistedSession();
       document.getElementById('form-login').reset();
       document.getElementById('form-register').reset();
       switchView('view-auth');
@@ -596,7 +685,7 @@
         if (statusSpan) statusSpan.innerText = "音声入力を停止しました。";
       } else {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) { alert("音声認識非対応ブラウザです。"); return; }
+        if (!SpeechRecognition) { alert("お使いのブラウザは音声入力に対応していません。Google Chromeでのご利用をお願いします。"); return; }
         recognition = new SpeechRecognition();
         recognition.lang = 'ja-JP'; recognition.continuous = true;
         recognition.onstart = () => { isListening = true; speechBtn.innerText = "🛑 認識を終了する"; if (statusSpan) statusSpan.innerText = "録音中..."; };
@@ -676,10 +765,48 @@
       const res = await callBackend("getTodos");
       if (!res.success) { listDiv.innerHTML = `<p class="text-red-500 text-center py-8">${res.message}</p>`; return; }
       todoCache = res.todos;
+      renderTodoList();
+    }
+
+    function sortTodoCache(list, sortBy) {
+      const sorted = list.slice();
+      if (sortBy === 'created-desc') {
+        sorted.sort((a, b) => {
+          if (a.done !== b.done) return a.done ? 1 : -1;
+          return (b.createdAt || '').localeCompare(a.createdAt || '');
+        });
+      } else if (sortBy === 'created-asc') {
+        sorted.sort((a, b) => {
+          if (a.done !== b.done) return a.done ? 1 : -1;
+          return (a.createdAt || '').localeCompare(b.createdAt || '');
+        });
+      } else if (sortBy === 'content') {
+        sorted.sort((a, b) => {
+          if (a.done !== b.done) return a.done ? 1 : -1;
+          return (a.content || '').localeCompare(b.content || '', 'ja');
+        });
+      } else {
+        // 期限順（デフォルト）
+        sorted.sort((a, b) => {
+          if (a.done !== b.done) return a.done ? 1 : -1;
+          if (a.due && b.due) return a.due.localeCompare(b.due);
+          if (a.due) return -1;
+          if (b.due) return 1;
+          return 0;
+        });
+      }
+      return sorted;
+    }
+
+    function renderTodoList() {
+      const listDiv = document.getElementById('todo-list');
+      const sortBy = document.getElementById('todo-sort').value;
       if (todoCache.length === 0) { listDiv.innerHTML = '<p class="text-gray-500 text-center py-8">ToDoはまだありません。</p>'; return; }
 
+      const sortedTodos = sortTodoCache(todoCache, sortBy);
+
       listDiv.innerHTML = "";
-      todoCache.forEach(t => {
+      sortedTodos.forEach(t => {
         const card = document.createElement('div');
         card.className = "bg-white p-4 rounded-lg shadow-sm border border-gray-100 flex items-start space-x-3";
 
@@ -691,7 +818,7 @@
 
         const content = document.createElement('div');
         content.className = `flex-grow ${t.done ? 'opacity-50 line-through' : ''}`;
-        content.innerHTML = `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(t.content)}</p>${t.due ? `<span class="text-xs text-gray-400">期限: ${escapeHtml(t.due)}</span>` : ''}`;
+        content.innerHTML = `<p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(t.content)}</p>${t.due ? `<span class="text-xs text-gray-400">期限: ${escapeHtml(t.due.replace('T', ' '))}</span>` : ''}`;
 
         const actions = document.createElement('div');
         actions.className = "flex space-x-3 text-xs shrink-0 pl-2";
@@ -755,11 +882,20 @@
       if (res.success) { loadTodoData(); } else { alert("削除失敗: " + res.message); }
     }
 
-    async function loadBoardData() {
+    let boardCurrentPage = 1;
+    const BOARD_PAGE_SIZE = 10;
+
+    async function loadBoardData(page) {
+      boardCurrentPage = page || boardCurrentPage;
       const bList = document.getElementById('board-list');
-      const res = await callBackend("getBoardEvents");
+      const res = await callBackend("getBoardEvents", { page: boardCurrentPage, pageSize: BOARD_PAGE_SIZE });
       if(!res.success) return;
+      boardCache = res.events;
+      boardCurrentPage = res.page;
       bList.innerHTML = "";
+      if (res.events.length === 0) {
+        bList.innerHTML = '<p class="text-gray-500 text-center py-8 col-span-2">まだ投稿はありません。</p>';
+      }
       res.events.forEach(ev => {
         const canEdit = (ev.email === session.email || session.isAdmin);
         const card = document.createElement('div');
@@ -770,17 +906,35 @@
             <p class="text-sm text-gray-600">${escapeHtml(ev.description)}</p>
           </div>
           <div class="text-xs pt-2 border-t flex justify-between">
-            ${ev.snsLink ? `<a href="${escapeHtml(ev.snsLink)}" target="_blank" class="text-blue-600 font-bold">🔗 連絡先</a>` : ''}
-            <div>
-              ${canEdit ? `<button data-action="delete-board" class="text-red-500">削除</button>` : ''}
+            ${ev.snsLink ? `<a href="${escapeHtml(ev.snsLink)}" target="_blank" class="text-blue-600 font-bold">🔗 連絡先</a>` : '<span></span>'}
+            <div class="space-x-2">
+              ${canEdit ? `<button data-action="edit-board" class="text-blue-500">編集</button><button data-action="delete-board" class="text-red-500">削除</button>` : ''}
             </div>
           </div>
         `;
         if (canEdit) {
+          card.querySelector('[data-action="edit-board"]').onclick = () => openBoardModal(ev.id);
           card.querySelector('[data-action="delete-board"]').onclick = () => deleteBoardData(ev.id);
         }
         bList.appendChild(card);
       });
+
+      renderBoardPagination(res.page, res.totalPages, res.totalCount);
+    }
+
+    function renderBoardPagination(page, totalPages, totalCount) {
+      const pager = document.getElementById('board-pagination');
+      if (!pager) return;
+      if (totalCount === 0) { pager.innerHTML = ""; return; }
+      pager.innerHTML = `
+        <button ${page <= 1 ? 'disabled' : ''} class="px-3 py-1 text-sm rounded border ${page <= 1 ? 'text-gray-300 border-gray-200' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}" data-action="prev-page">← 前へ</button>
+        <span class="text-sm text-gray-500">${page} / ${totalPages} ページ（全${totalCount}件）</span>
+        <button ${page >= totalPages ? 'disabled' : ''} class="px-3 py-1 text-sm rounded border ${page >= totalPages ? 'text-gray-300 border-gray-200' : 'text-gray-700 border-gray-300 hover:bg-gray-100'}" data-action="next-page">次へ →</button>
+      `;
+      const prevBtn = pager.querySelector('[data-action="prev-page"]');
+      const nextBtn = pager.querySelector('[data-action="next-page"]');
+      if (prevBtn && page > 1) prevBtn.onclick = () => loadBoardData(page - 1);
+      if (nextBtn && page < totalPages) nextBtn.onclick = () => loadBoardData(page + 1);
     }
 
     async function deleteBoardData(eventId) {
@@ -790,21 +944,70 @@
     }
 
     async function submitBoardData() {
+      const eventId = document.getElementById('board-event-id').value;
       const title = document.getElementById('board-title').value;
       const description = document.getElementById('board-description').value;
       const snsLink = document.getElementById('board-sns').value;
       if (!title || !description) { alert("イベント名と企画内容は必須です。"); return; }
-      const res = await callBackend("submitBoard", { title, description, snsLink });
+      const action = eventId ? "updateBoard" : "submitBoard";
+      const payload = eventId ? { eventId, title, description, snsLink } : { title, description, snsLink };
+      const res = await callBackend(action, payload);
       if (res.success) {
         closeBoardModal();
-        document.getElementById('board-title').value = "";
-        document.getElementById('board-description').value = "";
-        document.getElementById('board-sns').value = "";
         loadBoardData();
-      } else { alert("投稿失敗: " + res.message); }
+      } else { alert((eventId ? "更新失敗: " : "投稿失敗: ") + res.message); }
     }
 
     // --- アカウント設定（プロフィール編集・パスワード変更・退会） ---
+    // --- 管理者メニュー ---
+    async function loadAdminData() {
+      const tbody = document.getElementById('admin-user-list');
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-gray-500 py-8">読み込んでいます...</td></tr>';
+      const res = await callBackend("adminListUsers");
+      if (!res.success) { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 py-8">${escapeHtml(res.message)}</td></tr>`; return; }
+
+      tbody.innerHTML = "";
+      res.users.forEach(u => {
+        const isSelf = u.email === session.email;
+        const tr = document.createElement('tr');
+        tr.className = "border-t";
+        tr.innerHTML = `
+          <td class="px-4 py-2">${escapeHtml(u.nickname)}${isSelf ? ' <span class="text-xs text-gray-400">(自分)</span>' : ''}</td>
+          <td class="px-4 py-2">${escapeHtml(u.email)}</td>
+          <td class="px-4 py-2">${escapeHtml(u.registeredAt || '-')}</td>
+          <td class="px-4 py-2">
+            <input type="checkbox" data-action="toggle-admin" ${u.isAdmin ? 'checked' : ''} ${isSelf && u.isAdmin ? 'disabled' : ''} class="h-4 w-4">
+          </td>
+          <td class="px-4 py-2">
+            ${isSelf ? '' : '<button data-action="delete-user" class="text-red-500 hover:underline text-xs">強制退会</button>'}
+          </td>
+        `;
+        const checkbox = tr.querySelector('[data-action="toggle-admin"]');
+        if (checkbox) {
+          checkbox.onchange = () => setUserAdminFlag(u.email, checkbox.checked, checkbox);
+        }
+        const delBtn = tr.querySelector('[data-action="delete-user"]');
+        if (delBtn) {
+          delBtn.onclick = () => adminDeleteUser(u.email, u.nickname);
+        }
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function setUserAdminFlag(targetEmail, isAdmin, checkboxEl) {
+      const res = await callBackend("adminSetAdmin", { targetEmail, isAdmin });
+      if (!res.success) {
+        alert("変更失敗: " + res.message);
+        checkboxEl.checked = !isAdmin; // 失敗時はUIを元に戻す
+      }
+    }
+
+    async function adminDeleteUser(targetEmail, nickname) {
+      if (!confirm(`「${nickname}」さん（${targetEmail}）を強制退会させます。関連する実績メモ・ToDo・投稿もすべて削除され、元に戻せません。よろしいですか？`)) return;
+      const res = await callBackend("adminDeleteUser", { targetEmail });
+      if (res.success) { loadAdminData(); } else { alert("削除失敗: " + res.message); }
+    }
+
     async function saveProfileData() {
       const nickname = document.getElementById('account-nickname').value;
       const sns = document.getElementById('account-sns').value;
@@ -813,6 +1016,7 @@
       if (res.success) {
         session.nickname = nickname;
         session.sns = sns;
+        persistSession();
         document.getElementById('user-display').innerText = `👤 ${session.nickname} さん`;
         alert("プロフィールを更新しました。");
       } else { alert("更新失敗: " + res.message); }
@@ -841,11 +1045,28 @@
       if (res.success) {
         alert(res.message);
         closeDeleteAccountModal();
-        logout();
+        await logout();
       } else { alert("退会に失敗しました: " + res.message); }
     }
 
-    function openBoardModal() { document.getElementById('modal-board').classList.remove('hidden'); }
+    function openBoardModal(id) {
+      const isEdit = !!id;
+      document.getElementById('board-modal-title').innerText = isEdit ? '投稿を編集' : 'イベント企画の投稿';
+      if (isEdit) {
+        const ev = boardCache.find(e => e.id === id);
+        if (!ev) return;
+        document.getElementById('board-event-id').value = ev.id;
+        document.getElementById('board-title').value = ev.title;
+        document.getElementById('board-description').value = ev.description;
+        document.getElementById('board-sns').value = ev.snsLink || "";
+      } else {
+        document.getElementById('board-event-id').value = "";
+        document.getElementById('board-title').value = "";
+        document.getElementById('board-description').value = "";
+        document.getElementById('board-sns').value = "";
+      }
+      document.getElementById('modal-board').classList.remove('hidden');
+    }
     function closeBoardModal() { document.getElementById('modal-board').classList.add('hidden'); }
     function openHelpModal() { document.getElementById('modal-help').classList.remove('hidden'); }
     function closeHelpModal() { document.getElementById('modal-help').classList.add('hidden'); }
